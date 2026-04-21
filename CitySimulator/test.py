@@ -120,6 +120,10 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
 # MEMBER 1 SECTION
 # REQUIREMENTS 1, 2, 3, 4
 # =========================================================
+# 1. A city with randomly positioned building, trees, cars & peoples
+# 2. A controllable player
+# 3. Player can walk & jump
+# 4. No player, car & human bot can pass through the building
 
 # Requirement 1:
 # Checks whether a position is inside the reserved road area.
@@ -127,7 +131,8 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
 def reserved_road_area(x, y, padding=0):
     return abs(x) <= ROAD_HALF_WIDTH + padding or abs(y) <= ROAD_HALF_WIDTH + padding
 
-
+# Requirement 1:
+# Prevents generated buildings from overlapping with one another.
 def building_overlap(x, y, w, d):
     for b in buildings:
         dx = abs(x - b["x"])
@@ -136,7 +141,8 @@ def building_overlap(x, y, w, d):
             return True
     return False
 
-
+# Requirement 1:
+# Prevents generated trees from overlapping with buildings or other trees.
 def tree_overlap(x, y):
     for b in buildings:
         if circle_rect_collision(x, y, 14, b["x"], b["y"], b["w"] + 20, b["d"] + 20):
@@ -146,7 +152,8 @@ def tree_overlap(x, y):
             return True
     return False
 
-
+# Requirement 1:
+# Randomly generates buildings across the city while keeping roads and spawn area clear.
 def generate_buildings():
     global buildings
     buildings = []
@@ -186,7 +193,8 @@ def generate_buildings():
             )
         })
 
-
+# Requirement 1:
+# Randomly generates trees in empty areas outside the roads.
 def generate_trees():
     global trees
     trees = []
@@ -211,6 +219,8 @@ def generate_trees():
 
         trees.append({"x": x, "y": y})
 
+# Requirement 1:
+# Randomly generates cars on road lanes with different directions and colors.
 def generate_cars():
     global cars
     cars = []
@@ -250,6 +260,8 @@ def generate_cars():
             "turned_recently": False,
         })
 
+# Requirement 1:
+# Randomly generates human bots in city areas outside the road.
 def generate_people():
     global people
     people = []
@@ -278,14 +290,16 @@ def generate_people():
             "radius": 10
         })
 
-
+# Requirement 1:
+# Calls all generation functions to create the full city.
 def generate_city():
     generate_buildings()
     generate_trees()
     generate_cars()
     generate_people()
 
-
+# Requirement 1:
+# Draws dashed lane divider lines on both main roads.
 def draw_lane_lines():
     glColor3f(1.0, 0.95, 0.2)
 
@@ -309,6 +323,8 @@ def draw_lane_lines():
         glEnd()
         x += 55
 
+# Requirement 1:
+# Draws the city ground, roads, sidewalks, and lane lines.
 def draw_ground():
     glBegin(GL_QUADS)
     glColor3f(0.16, 0.46, 0.20)
@@ -362,7 +378,8 @@ def draw_ground():
 
     draw_lane_lines()
 
-
+# Requirement 1:
+# Draws the city boundary walls.
 def draw_boundary():
     glColor3f(0.78, 0.78, 0.82)
 
@@ -390,7 +407,8 @@ def draw_boundary():
     glutSolidCube(1)
     glPopMatrix()
 
-
+# Requirement 1:
+# Draws one building using a main block and rooftop block.
 def draw_building(b):
     glPushMatrix()
     glTranslatef(b["x"], b["y"], b["h"] / 2.0)
@@ -412,7 +430,8 @@ def draw_building(b):
 
     glPopMatrix()
 
-
+# Requirement 1:
+# Draws one tree using a trunk and layered leaf spheres.
 def draw_tree(t):
     glPushMatrix()
     glTranslatef(t["x"], t["y"], 14)
@@ -433,7 +452,8 @@ def draw_tree(t):
     glutSolidSphere(10, 14, 14)
     glPopMatrix()
 
-
+# Requirement 1:
+# Draws the complete static city world.
 def draw_static_world():
     draw_ground()
     draw_boundary()
@@ -458,7 +478,8 @@ def collides_with_building(nx, ny):
             return True
     return False
 
-
+# Requirement 4:
+# Prevents player from going through trees.
 def collides_with_tree(nx, ny):
     r = player_radius()
     for t in trees:
@@ -590,7 +611,10 @@ def draw_player():
 # MEMBER 2 SECTION
 # REQUIREMENTS 5, 6, 7, 8
 # =========================================================
-
+# 5. No object can go beyond the bounded area
+# 6. Player can collide with cars resulting accident count and simulation over
+# 7. Will track the survival time without accident
+# 8. Player can switch mode from player to car to player by pressing “e”
 
 # Requirement 5:
 # Checks whether a human bot's next position is valid.
@@ -607,15 +631,18 @@ def person_valid(nx, ny):
 
     return True
 
-
+# Requirement 5:
+# Checks whether a car is near the center intersection.
 def near_intersection(c):
     return abs(c["x"]) < 12 and abs(c["y"]) < 12
 
-
+# Requirement 5:
+# Randomly chooses whether a car goes straight, left, or right.
 def choose_turn():
     return random.choice(["straight", "left", "right"])
 
-
+# Requirement 5:
+# Applies a left or right turn to a car and keeps it on valid lanes.
 def apply_turn(c, decision):
     old_angle = c["angle"]
 
@@ -650,7 +677,8 @@ def apply_turn(c, decision):
 
     c["turned_recently"] = True
 
-
+# Requirement 5:
+# Updates all car movements while keeping them inside the city and on road lanes.
 def update_cars():
     for c in cars:
         if near_intersection(c) and not c["turned_recently"]:
@@ -679,7 +707,8 @@ def update_cars():
             elif c["x"] < WORLD_MIN + 20:
                 c["x"] = WORLD_MAX - 20
 
-
+# Requirement 5:
+# Updates all human bot movement while keeping them inside valid city areas.
 def update_people():
     for p in people:
         if random.random() < 0.03:
@@ -785,7 +814,10 @@ def update_game():
 # MEMBER 3 SECTION
 # REQUIREMENTS 9, 10, 11, 12
 # =========================================================
-
+# 9. First person & Third person mode
+# 10. Camera viewing angle changes with rotation while walking or driving
+# 11. Restart the simulation while player is dead by an accident by “R”
+# 12. Cheat Mode for no accident simulation
 
 # Requirement 9:
 # Draws one traffic car model.
@@ -876,7 +908,8 @@ def specialKeyListener(key, x, y):
     elif key == GLUT_KEY_RIGHT:
         rotate_player(-1)
 
-
+# Requirement 10:
+# Mouse callback kept for template structure compatibility.
 def mouseListener(button, state, x, y):
     pass
 
